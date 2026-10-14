@@ -24,6 +24,7 @@ distro's packages.
 | `design/ideas/` | not yet decided — one file per idea, `ls` is the index, deleted on graduation | transient |
 | yardoc (source headers) | what one symbol does, why it is shaped so | at the symbol |
 | `CHANGELOG.md` | what changed and what you must do about it | — |
+| `RELEASING.md` | the steps to cut a release | — |
 
 Every fact lives in exactly one of these; the others link to it.
 
