@@ -33,7 +33,7 @@ Every fact lives in exactly one of these; the others link to it.
 
 ## Conventions
 
-- **Ruby ≥ 3.2, plain classes, `ffi` the only runtime dependency.** `Data.define` value objects.
+- **Ruby ≥ 3.3, plain classes, `ffi` the only runtime dependency.** `Data.define` value objects.
 - **Linux only**; macOS and Windows are unsupported.
 - **`# frozen_string_literal: true`** atop every Ruby file.
 - **YARD on every public module/class/method**: concrete `@param` / `@return` types, `@raise` for expected exceptions, the local *why*.

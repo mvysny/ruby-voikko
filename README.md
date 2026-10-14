@@ -13,7 +13,7 @@ distro's packages.
   sudo apt install libvoikko1 voikko-fi
   ```
 
-- Ruby 3.2 or newer.
+- Ruby 3.3 or newer.
 
 ## Installation
 
