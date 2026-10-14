@@ -14,9 +14,9 @@ require_relative 'voikko/version'
 #   end
 #
 # A handle holds about 0.5 MB of native memory that Ruby's GC cannot see: prefer {.open}, which
-# terminates it after the block, or call {#terminate} yourself. A forgotten handle is still
-# freed by a finalizer once unreachable. After {#terminate}, every method but {#terminate} and
-# {#terminated?} raises {Error}.
+# closes it after the block, or call {#close} yourself. A forgotten handle is still freed by a
+# finalizer once unreachable. After {#close}, every method but {#close} and {#closed?} raises
+# {Error}.
 #
 # Named +Voikko+, not +Voikko::Analyzer+, because libvoikko also spells, hyphenates and checks
 # grammar; those methods (+#spell+, +#suggest+, +#hyphenate+) would sit here, and are not bound
@@ -28,7 +28,7 @@ require_relative 'voikko/version'
 # handle silently returns wrong analyses when two threads share it. Threads that want analyses
 # in parallel open a handle each.
 class Voikko
-  # libvoikko refused: a dictionary failed to open, or the handle is already terminated.
+  # libvoikko refused: a dictionary failed to open, or the handle is already closed.
   class Error < StandardError; end
 
   # One reading of a word, as libvoikko gives it: a frozen +Hash{String => String}+ of its
@@ -106,8 +106,8 @@ class Voikko
   # @return [String] the system libvoikko's version: +"4.3.3"+.
   def self.library_version = Lib.voikkoGetVersion
 
-  # Opens a handle, yields it and terminates it after the block, the way +File.open+ sits beside
-  # +File.new+: the block form is where {#terminate} runs without the caller remembering it.
+  # Opens a handle, yields it and closes it after the block, the way +File.open+ sits beside
+  # +File.new+: the block form is where {#close} runs without the caller remembering it.
   # Without a block it is {#initialize}.
   #
   #   Voikko.open(language: 'fi') { |voikko| voikko.base_forms('kadulla') }  #=> ["katu"]
@@ -124,7 +124,7 @@ class Voikko
     begin
       yield voikko
     ensure
-      voikko.terminate
+      voikko.close
     end
   end
 
@@ -162,7 +162,7 @@ class Voikko
   # @return [Array<Analysis>] the readings; +[]+ for an unknown word.
   # @raise [ArgumentError] when +word+ holds a NUL byte, which libvoikko would silently cut the
   #   word at, or cannot be read as UTF-8.
-  # @raise [Error] when this handle is terminated.
+  # @raise [Error] when this handle is closed.
   def analyze(word)
     word = utf8_word(word)
     with_handle do |handle|
@@ -190,24 +190,25 @@ class Voikko
   # @raise [Error] (see #analyze)
   def base_forms(word) = analyze(word).filter_map(&:base_form).uniq
 
-  # Frees the handle's native memory now rather than at GC. Idempotent.
+  # Frees the handle's native memory now rather than at GC. Idempotent. Named after Ruby's
+  # +IO#close+, not libvoikko's +voikkoTerminate+, so it reads like every other resource.
   #
   # @return [void]
-  def terminate
+  def close
     @mutex.synchronize do
       @handle&.free
       @handle = nil
     end
   end
 
-  # @return [Boolean] whether {#terminate} has run.
-  def terminated? = @mutex.synchronize { @handle.nil? }
+  # @return [Boolean] whether {#close} has run.
+  def closed? = @mutex.synchronize { @handle.nil? }
 
   private
 
   def with_handle
     @mutex.synchronize do
-      raise Error, 'this Voikko is terminated' unless @handle
+      raise Error, 'this Voikko is closed' unless @handle
 
       yield @handle
     end

@@ -31,7 +31,7 @@ missing library shows up at `require`, not at install, so the load error names t
 ## D_handle_mutex — Why does each handle lock itself rather than leave threads to the caller?
 
 libvoikko's handle is not reentrant: two threads in one handle get wrong analyses, with no
-crash and no error (`R_handle_threads`). So every call into a handle, `#terminate` included,
+crash and no error (`R_handle_threads`). So every call into a handle, `#close` included,
 runs under that handle's own `Mutex`, as upstream's Java binding does with `synchronized`
 (`R_official_bindings`). Why not document "one handle per thread", as the Python binding does:
 the failure is silent, so a caller who shares one handle across a server's threads finds out
@@ -40,15 +40,15 @@ shared-handle test clean: JRuby and TruffleRuby have no GVL. The cost is one unc
 per word; a caller who wants analyses in parallel opens a handle per thread, which libvoikko
 supports.
 
-## D_handle_lifecycle — Why both an explicit `#terminate` and a GC finalizer?
+## D_handle_lifecycle — Why both an explicit `#close` and a GC finalizer?
 
 A handle holds native memory Ruby's GC cannot see (`R_handle_threads`: about 0.5 MB each), so
 it is released two ways, the pair both upstream bindings use (`R_official_bindings`): an
-`FFI::AutoPointer` whose release calls `voikkoTerminate`, and `#terminate`, which frees it at
-once; any later call raises. Why not `#terminate` alone: a forgotten call leaks until the
+`FFI::AutoPointer` whose release calls `voikkoTerminate`, and `#close`, which frees it at
+once; any later call raises. Why not `#close` alone: a forgotten call leaks until the
 process exits. Why not the finalizer alone: a caller opening handles in a loop runs ahead of a
 GC that sees none of that memory. The finalizer may run on another thread, which is safe: it
-runs only once the handle is unreachable, and terminating one handle while others analyse is
+runs only once the handle is unreachable, and closing one handle while others analyse is
 clean. Analyses are copied into Ruby strings before the C array is freed, so no Ruby value
 outlives the C memory it came from.
 

@@ -107,18 +107,18 @@ describe Voikko do
       assert_includes error.message, 'Specified dictionary variant was not found'
     end
 
-    it 'terminates after the block and returns its value' do
+    it 'closes after the block and returns its value' do
       handle = nil
       result = Voikko.open(language: 'fi') do |voikko|
         handle = voikko
-        refute voikko.terminated?
+        refute voikko.closed?
         voikko.base_forms('kadulla')
       end
       assert_equal ['katu'], result
-      assert handle.terminated?
+      assert handle.closed?
     end
 
-    it 'terminates even when the block raises' do
+    it 'closes even when the block raises' do
       handle = nil
       assert_raises(RuntimeError) do
         Voikko.open(language: 'fi') do |voikko|
@@ -126,29 +126,29 @@ describe Voikko do
           raise 'boom'
         end
       end
-      assert handle.terminated?
+      assert handle.closed?
     end
 
     it 'returns the open handle without a block' do
       voikko = Voikko.open(language: 'fi')
       assert_equal ['katu'], voikko.base_forms('kadulla')
     ensure
-      voikko&.terminate
+      voikko&.close
     end
 
-    it 'terminates idempotently and raises on later calls' do
+    it 'closes idempotently and raises on later calls' do
       voikko = Voikko.new(language: 'fi')
-      voikko.terminate
-      voikko.terminate
-      assert voikko.terminated?
+      voikko.close
+      voikko.close
+      assert voikko.closed?
       assert_raises(Voikko::Error) { voikko.analyze('kadulla') }
       assert_raises(Voikko::Error) { voikko.base_forms('kadulla') }
     end
 
-    it 'keeps analyses valid after terminate' do
+    it 'keeps analyses valid after close' do
       voikko = Voikko.new(language: 'fi')
       kadulla = voikko.analyze('kadulla').first
-      voikko.terminate
+      voikko.close
       GC.start
       assert_equal 'katu', kadulla.base_form
     end

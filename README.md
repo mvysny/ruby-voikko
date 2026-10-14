@@ -35,7 +35,7 @@ Voikko.open(language: 'fi') do |voikko|
 end
 ```
 
-`Voikko.open` terminates the handle after the block; `Voikko.new` leaves that to `#terminate`.
+`Voikko.open` closes the handle after the block; `Voikko.new` leaves that to `#close`.
 
 ## License
 
