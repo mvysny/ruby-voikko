@@ -88,6 +88,28 @@ claim came from.
   morpheme, `i`/`j` upper case, `p`/`q` lower) shows the dictionary form's case, not the input's:
   *HELSINGISSÄ* gives `=ipppppppppp`. **[verified 2026-10-14, voikko-fi 2.5]**
 
+## R_analysis_backends — each dictionary picks a morphology backend, and each emits its own keys
+
+- The keys are a closed C++ enum, `voikko_mor_analysis::Key`, of 21: the 18 seen in
+  `R_analysis_attributes` plus `MALAGA_VAPAA_JALKIOSA`, `WEIGHT` and `WORDIDS`. A new key needs a
+  libvoikko release. Same in 4.3.3 and master. **[src]**
+- The dictionary picks the backend: a V5 `.vfst` dictionary (voikko-fi) gets `finnishVfst` unless
+  its `index.txt` names another; a V3 `.zhfst` speller (Giellatekno's Northern Sami and others) gets
+  `null`; a V4 dictionary gets `hfst`, and its loader is built only with vislcg3. **[src]**
+- `finnishVfst` emits the keys of `R_analysis_attributes`; `hfst` only `BASEFORM` (the lemma before
+  the first `+`) and `FSTOUTPUT` (the tags after it); `vfst`, built only with an experimental flag,
+  only `FSTOUTPUT` and `WEIGHT`; `null` no analyses at all. `lttoolbox` would emit `CLASS`,
+  `STRUCTURE` and `SIJAMUOTO` `none`, but calls an `addAttribute` overload `Analysis` no longer
+  has. **[src]**
+- No key is common to every backend: `BASEFORM` is missing from `vfst`, `CLASS` from `hfst` and
+  `vfst`. Even `finnishVfst` adds `BASEFORM` and `CLASS` only when the transducer output yields
+  them; `STRUCTURE`, `FSTOUTPUT` and `WORDBASES` it always adds, `WORDIDS` only when the dictionary
+  carries word ids. **[src]**
+- Ubuntu's `libvoikko1` links `libhfstospell` but not vislcg3, and the archive packages no voikko
+  dictionary but `voikko-fi`; so on Ubuntu analysis is `finnishVfst`, and a hand-installed
+  `.zhfst` speller analyses every word to an empty array.
+  **[verified 2026-10-14, 4.3.3-1, `ldd` and `apt-cache search`; the `.zhfst` half from src]**
+
 ## R_wordbases_format — `WORDBASES` is not a regular compound split
 
 - Upstream: parts joined by `+`, each part's base form in parentheses, a derivational suffix
