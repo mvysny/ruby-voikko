@@ -107,6 +107,13 @@ describe Voikko do
       assert_includes error.message, 'Specified dictionary variant was not found'
     end
 
+    it 'raises TypeError for a language or path that is not a String' do
+      error = assert_raises(TypeError) { Voikko.open(language: :fi) { flunk } }
+      assert_includes error.message, 'language must be a String'
+      error = assert_raises(TypeError) { Voikko.new(language: 'fi', path: 42) }
+      assert_includes error.message, 'path must be a String or nil'
+    end
+
     it 'closes after the block and returns its value' do
       handle = nil
       result = Voikko.open(language: 'fi') do |voikko|

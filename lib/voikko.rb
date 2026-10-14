@@ -116,6 +116,7 @@ class Voikko
   # @param path [String, nil] (see #initialize)
   # @yieldparam voikko [Voikko] the open handle.
   # @return [Object, Voikko] the block's value, or the open handle when no block is given.
+  # @raise [TypeError] (see #initialize)
   # @raise [Error] (see #initialize)
   def self.open(language:, path: nil)
     voikko = new(language:, path:)
@@ -134,8 +135,17 @@ class Voikko
   # @param language [String] a language tag: +'fi'+, +'fi-FI'+ or +'fi-x-standard'+.
   # @param path [String, nil] an extra directory to search for dictionaries, besides the system
   #   ones; a directory that does not exist is ignored.
+  # @raise [TypeError] when +language+ is not a String (+:fi+ is not), or +path+ neither a String
+  #   nor +nil+.
   # @raise [Error] when no installed dictionary serves +language+; the message names +voikko-fi+.
   def initialize(language:, path: nil)
+    unless language.is_a?(String)
+      raise TypeError, "language must be a String like 'fi', got #{language.inspect}"
+    end
+    unless path.nil? || path.is_a?(String)
+      raise TypeError, "path must be a String or nil, got #{path.inspect}"
+    end
+
     error = FFI::MemoryPointer.new(:pointer)
     handle = Lib.voikkoInit(error, language, path)
     if handle.null?
