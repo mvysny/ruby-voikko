@@ -21,6 +21,22 @@ distro's packages.
 gem 'voikko'
 ```
 
+## Usage
+
+```ruby
+require 'voikko'
+
+Voikko.open(language: 'fi') do |voikko|
+  kadulla = voikko.analyze('kadulla').first
+  kadulla.base_form                 #=> "katu"
+  kadulla.sijamuoto                 #=> "ulkoolento"
+  voikko.base_forms('voi')          #=> ["voida", "voi"]
+  voikko.base_forms('HELSINGISSÄ')  #=> ["Helsinki"]
+end
+```
+
+`Voikko.open` terminates the handle after the block; `Voikko.new` leaves that to `#terminate`.
+
 ## License
 
 MIT, see [LICENSE](LICENSE). The gem ships no Voikko code or data: libvoikko

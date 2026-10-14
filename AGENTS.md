@@ -29,7 +29,7 @@ Every fact lives in exactly one of these; the others link to it.
 
 ## Module map
 
-- `lib/voikko.rb` — the entry file; the `Voikko` namespace and its FFI binding.
+- `lib/voikko.rb` — the `Voikko` handle class, its `Analysis` value and the private FFI binding `Voikko::Lib`.
 
 ## Conventions
 
