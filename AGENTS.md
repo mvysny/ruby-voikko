@@ -20,6 +20,7 @@ distro's packages.
 | `README.md` | the pitch, requirements, install | — |
 | `AGENTS.md` (this) | promises, the module map, conventions, commands | every turn |
 | `design/decisions.md` | why this and not that — `D_` entries, FAQ-shaped | lazy |
+| `design/research.md` | what libvoikko and voikko-fi actually do — `R_` entries with provenance | lazy |
 | `design/ideas/` | not yet decided — one file per idea, `ls` is the index, deleted on graduation | transient |
 | yardoc (source headers) | what one symbol does, why it is shaped so | at the symbol |
 | `CHANGELOG.md` | what changed and what you must do about it | — |
