@@ -20,20 +20,20 @@ choices in `design/decisions.md`:
 - library name: `D_ffi_distro_lib`, `R_library_files`; who frees what:
   `R_analysis_memory`.
 
-## Open questions
+## API shape
 
-- **`Q_api_shape`:** sketch: `Voikko::Analyzer.new(language: 'fi')`,
-  `#analyze(word)` → `Array<Voikko::Analysis>` (a `Data.define` wrapping a
-  frozen `Hash{String => String}`), plus `#base_forms(word)` →
-  `Array<String>`, deduplicated (*voi* repeats `voida` three times). Is
-  `Analyzer` the right noun, given that libvoikko also does spelling,
-  hyphenation and grammar? Leave those out until asked for, but don't name
-  the class in a way that rules them out; upstream's Python and Java bindings
-  both call the handle class `Voikko`.
-- **macOS library name:** the fallback after `libvoikko.so.1` and `voikko`
-  (`libvoikko.1.dylib`?) is unverified; there is no Mac to check on.
+`Voikko` becomes a class (today `lib/voikko/version.rb` opens it as a
+module): `Voikko.new(language: 'fi')` is one libvoikko handle;
+`#analyze(word)` → `Array<Voikko::Analysis>` (a `Data.define` wrapping a
+frozen `Hash{String => String}`); `#base_forms(word)` → `Array<String>`,
+deduplicated (*voi* repeats `voida` three times). Not `Voikko::Analyzer`:
+libvoikko also spells, hyphenates and checks grammar, and an `Analyzer`
+passed around a caller's code loses its `Voikko::` prefix and reads as any
+analyser. Not a `Voikko::Voikko` class inside the module: it stutters.
+Upstream's Python and Java bindings name the class `Voikko` too. The class's
+yardoc carries this why once it exists.
 
 ## Done when
 
-`Q_api_shape` is answered; the binding and specs run against the real
-library in CI; and this file is deleted.
+The binding and specs run against the real library in CI, and this file is
+deleted.

@@ -34,7 +34,7 @@ Every fact lives in exactly one of these; the others link to it.
 ## Conventions
 
 - **Ruby ≥ 3.2, plain classes, `ffi` the only runtime dependency.** `Data.define` value objects.
-- **Linux-first; macOS may work; Windows is unsupported.**
+- **Linux only**; macOS and Windows are unsupported.
 - **`# frozen_string_literal: true`** atop every Ruby file.
 - **YARD on every public module/class/method**: concrete `@param` / `@return` types, `@raise` for expected exceptions, the local *why*.
 - **Tests: rspec-core with minitest-style asserts.** `describe` / `it` but `assert_equal` / `assert` / `refute`; no RSpec matchers, no rspec-mocks.
