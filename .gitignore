@@ -3,3 +3,4 @@
 .yardoc/
 doc/
 *.gem
+/pkg/
