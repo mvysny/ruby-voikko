@@ -20,6 +20,7 @@ distro's packages.
 | `README.md` | the pitch, requirements, install | — |
 | `AGENTS.md` (this) | promises, the module map, conventions, commands | every turn |
 | `design/decisions.md` | why this and not that — `D_` entries, FAQ-shaped | lazy |
+| `design/ideas/` | not yet decided — one file per idea, `ls` is the index, deleted on graduation | transient |
 | yardoc (source headers) | what one symbol does, why it is shaped so | at the symbol |
 | `CHANGELOG.md` | what changed and what you must do about it | — |
 
@@ -49,6 +50,7 @@ Every fact lives in exactly one of these; the others link to it.
 ## Skills this project follows
 
 - **Yardoc is browsed standalone on rubydoc.info**, so each header carries the complete local what *and* why. The `writing-rdoc` skill has the rules.
+- **An idea file is temporary:** it lives in `design/ideas/`, one per file, and graduation is not done until the file is gone and its nuggets are in their durable homes. The `ideas-folder` skill has the procedure.
 - **This doc layer** — the loaded file, the lazy `design/` files, the tripwire — is the `design-docs` skill's shape.
 
 ## Maintenance of this file
