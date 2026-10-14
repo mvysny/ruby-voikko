@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# An irb session with the gem loaded from lib/, for trying the API by hand.
+
+require 'bundler/setup'
+require 'voikko'
+
+require 'irb'
+IRB.start(__FILE__)

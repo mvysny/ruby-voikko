@@ -47,6 +47,7 @@ Every fact lives in exactly one of these; the others link to it.
 
 - `bundle exec rake check` (also the default task) — specs, then `design_tripwires`; what CI runs on push and PR (`.github/workflows/ci.yml`).
 - `bundle exec rspec spec/voikko_spec.rb:42` — one test.
+- `bin/console` — irb with the gem loaded, to try the API by hand.
 
 ## Skills this project follows
 
