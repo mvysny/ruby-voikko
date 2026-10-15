@@ -247,7 +247,7 @@ describe Voikko do
                                        '-e', script)
       assert status.success?, output
       hint = "libvoikko.so.1: not found\nlibvoikko is not installed: apt install libvoikko1 voikko-fi"
-      assert_equal [%w[tieto koneella].inspect, hint.inspect, hint.inspect].join("\n") + "\n", output
+      assert_equal [%w[tieto koneella], hint, hint].map(&:inspect), output.lines(chomp: true)
     end
 
     it 'closes idempotently and raises on later calls' do

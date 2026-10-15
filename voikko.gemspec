@@ -26,6 +26,6 @@ Gem::Specification.new do |spec|
 
   spec.files = Dir['lib/**/*.rb'] + %w[README.md LICENSE CHANGELOG.md]
 
-  # Binds the system's libvoikko at load time; see design/decisions.md D_ffi_distro_lib.
+  # Binds the system's libvoikko on the first Voikko.new; see design/decisions.md D_ffi_distro_lib.
   spec.add_dependency 'ffi', '~> 1.17'
 end

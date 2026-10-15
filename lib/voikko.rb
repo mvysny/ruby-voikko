@@ -17,9 +17,9 @@ require_relative 'voikko/version'
 # finalizer once unreachable. After {#close}, every method but {#close}, {#closed?} and
 # {#language} raises {Error}.
 #
-# +require 'voikko'+ loads no native code; the first {.new} binds libvoikko. So {Analysis} and
-# {Morpheme} are plain Ruby wherever the gem is installed, and a caller's tests can build one
-# without libvoikko:
+# +require 'voikko'+ loads no native code; the first {.new} or {.library_version} binds
+# libvoikko. So {Analysis} and {Morpheme} are plain Ruby wherever the gem is installed, and a
+# caller's tests can build one without libvoikko:
 #
 #   analysis = Voikko::Analysis.new('tietokoneella', { 'STRUCTURE' => '=ppppp=pppppppp' })
 #   analysis.morphemes.map(&:text)   #=> ["tieto", "koneella"]

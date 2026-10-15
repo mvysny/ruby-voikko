@@ -7,9 +7,8 @@ class Voikko
   # +libvoikko-dev+. A missing library re-raises +LoadError+, so a caller that makes the gem
   # optional still rescues it, with the packages to install appended.
   #
-  # Its own file, required by {Voikko.new} and {Voikko.library_version} rather than by
-  # +voikko.rb+, so {Voikko::Analysis} and {Voikko::Morpheme} work where libvoikko is not
-  # installed. A failed load leaves the file unloaded, so the next call raises again.
+  # Its own file, required on first use rather than by +voikko.rb+, so {Voikko::Analysis} and
+  # {Voikko::Morpheme} work where libvoikko is not installed.
   module Lib
     extend FFI::Library
 
