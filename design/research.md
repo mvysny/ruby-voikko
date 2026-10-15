@@ -84,9 +84,9 @@ claim came from.
 - Ambiguity is common, and repeats base forms: *alusta* gives 5 analyses (alku, alus, alunen,
   alusta, alustaa), *voi* gives 5 with `voida` three times, *kadun* gives katu and katua.
   **[verified 2026-10-14, voikko-fi 2.5]**
-- Analysis ignores case: *Kadulla* and *KADULLA* analyse as *kadulla*. `STRUCTURE` (`=` starts a
-  morpheme, `i`/`j` upper case, `p`/`q` lower) shows the dictionary form's case, not the input's:
-  *HELSINGISSÄ* gives `=ipppppppppp`. **[verified 2026-10-14, voikko-fi 2.5]**
+- Analysis ignores case: *Kadulla* and *KADULLA* analyse as *kadulla*. `STRUCTURE` shows the
+  dictionary form's case, not the input's: *HELSINGISSÄ* gives `=ipppppppppp`; its format is
+  `R_structure_format`. **[verified 2026-10-14, voikko-fi 2.5]**
 
 ## R_analysis_backends — each dictionary picks a morphology backend, and each emits its own keys
 
@@ -121,6 +121,26 @@ claim came from.
   **[verified 2026-10-14, voikko-fi 2.5]**
 - Compounding yields odd readings: *linja-autossa* also analyses as `linja-Autto`, `CLASS`
   `sukunimi`. **[verified 2026-10-14, voikko-fi 2.5]**
+
+## R_structure_format — `STRUCTURE` marks each character of the word, and where morphemes start
+
+- `morphological-analysis.txt`: `=` starts a morpheme and the word; `-` a hyphen the word may be
+  split after, written `-=` at a morpheme boundary; `p`/`i` a letter lower/upper case in the
+  standard form; `q`/`j` the same, with hyphenation forbidden before it. **[docs]**
+- `parseStructure` (`FinnishVfstAnalyzer.cpp`) also writes `:`, which the docs omit; sets `q`/`j`
+  for an abbreviation or number; starts a word-initial hyphen's value with `-`, not `=`; and copies
+  a dictionary's `[Xr]` fragment in verbatim, so voikko-fi could add marks. It aims at one mark per
+  input character but only `assert`s it. **[src]**
+- Without its `=`, the value had one mark per input character for every reading of ~60 words:
+  *vaa'an* `=pppppp`, *esim.* `=qqqqq`, *maa-* `=ppp-`, *-vuotias* `-=ppppppp`, *pH-arvo*
+  `=qj-=pppp`, *kuorma-auto-onnettomuus* `=pppppp-=pppp-=ppppppppppp`. No mark beyond the seven.
+  **[verified 2026-10-15, voikko-fi 2.5]**
+- `:` precedes an ending, never `=`: *YK:n* `=jj:p`, *12:30* `=qq:pp`. `=` cuts compounds and
+  lexicalised loans (*Wikipedia* `=ippp=ppppp`) but not derivations (*yrityskirjautumisen*
+  `=pppppp=ppppppppppppp`). **[verified 2026-10-15, voikko-fi 2.5]**
+- A slash, underscore, en dash, non-breaking or soft hyphen gets no analysis at all (*ja/tai*,
+  *foo_bar*, *linja–autossa*); an apostrophe or period is a letter, `p` or `q`.
+  **[verified 2026-10-15, voikko-fi 2.5]**
 
 ## R_cstr_input — what `voikkoAnalyzeWordCstr` does with awkward input
 

@@ -84,6 +84,83 @@ describe Voikko do
       assert_raises(ArgumentError) { @voikko.analyze("p\xE4\xE4") }
       assert_raises(ArgumentError) { @voikko.analyze("p\xC3\xA4\xC3\xA4".b) }
     end
+
+    it "keeps the word as given, frozen, without freezing the caller's string" do
+      word = +'KADULLA'
+      analysis = @voikko.analyze(word).first
+      assert_equal 'KADULLA', analysis.word
+      assert analysis.word.frozen?
+      refute word.frozen?
+    end
+  end
+
+  describe 'Analysis#morphemes' do
+    def morphemes(word, base_form = nil)
+      analyses = @voikko.analyze(word)
+      analysis = base_form ? analyses.find { |a| a.base_form == base_form } : analyses.first
+      analysis.morphemes
+    end
+
+    def texts(word) = morphemes(word).map(&:text)
+
+    it 'cuts a compound' do
+      assert_equal %w[tieto koneella], texts('tietokoneella')
+      assert_equal %w[kuorma auto onnettomuus], texts('kuorma-auto-onnettomuus')
+    end
+
+    it 'returns one morpheme for a simple word' do
+      assert_equal [Voikko::Morpheme.new(text: 'kadulla', standard_case: 'kadulla',
+                                         hyphen_before: false, hyphen_after: false)],
+                   morphemes('kadulla')
+    end
+
+    it 'gives a hyphen to the morpheme it follows' do
+      linja, autossa = morphemes('linja-autossa', 'linja-auto')
+      assert linja.hyphen_after?
+      refute linja.hyphen_before?
+      refute autossa.hyphen_before?
+      refute autossa.hyphen_after?
+    end
+
+    it 'marks a hyphen at either end of the word' do
+      vuotias, = morphemes('-vuotias')
+      assert_equal 'vuotias', vuotias.text
+      assert vuotias.hyphen_before?
+      maa, = morphemes('maa-', 'maa-')
+      assert_equal 'maa', maa.text
+      assert maa.hyphen_after?
+    end
+
+    it 'rebuilds the word from texts and hyphens' do
+      %w[linja-autossa -vuotias maa- kuorma-auto-onnettomuus YK:n vaa'an esim. 12:30].each do |word|
+        @voikko.analyze(word).each do |analysis|
+          rebuilt = analysis.morphemes.map do |m|
+            "#{'-' if m.hyphen_before?}#{m.text}#{'-' if m.hyphen_after?}"
+          end.join
+          assert_equal word, rebuilt
+        end
+      end
+    end
+
+    it 'keeps a colon inside its morpheme' do
+      assert_equal ['YK:n'], texts('YK:n')
+    end
+
+    it "spells each morpheme in the reading's case" do
+      assert_equal ['Helsingissä'], morphemes('HELSINGISSÄ').map(&:standard_case)
+      assert_equal %w[TV ohjelmassa], morphemes('tv-ohjelmassa', 'TV-ohjelma').map(&:standard_case)
+      assert_equal %w[x Akseli], morphemes('x-akseli', 'x-Akseli').map(&:standard_case)
+    end
+
+    it 'returns nil without STRUCTURE' do
+      assert_nil Voikko::Analysis.new('kissa', { 'BASEFORM' => 'kissa' }).morphemes
+    end
+
+    it 'raises when STRUCTURE does not line up with the word' do
+      analysis = Voikko::Analysis.new('kissa', { 'STRUCTURE' => '=ppp' })
+      error = assert_raises(Voikko::Error) { analysis.morphemes }
+      assert_includes error.message, 'does not line up'
+    end
   end
 
   describe '#base_forms' do

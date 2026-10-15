@@ -31,10 +31,11 @@ class Voikko
   # libvoikko refused: a dictionary failed to open, or the handle is already closed.
   class Error < StandardError; end
 
-  # One reading of a word, as libvoikko gives it: a frozen +Hash{String => String}+ of its
-  # attributes, with a reader for each key libvoikko defines.
+  # One reading of a word, as libvoikko gives it: the word as analysed, and a frozen
+  # +Hash{String => String}+ of its attributes with a reader for each key libvoikko defines.
   #
   #   analysis = voikko.analyze('kadulla').first
+  #   analysis.word               #=> "kadulla"
   #   analysis.base_form          #=> "katu"
   #   analysis.word_class         #=> "nimisana"
   #   analysis.tense              #=> nil, a noun has none
@@ -46,11 +47,41 @@ class Voikko
   # +nil+ where the dictionary's backend or the word class has no such attribute; no key is
   # present for every backend. Values stay libvoikko's strings: +negative+ is +"true"+,
   # +"false"+ or +"both"+, +person+ is +"1"+. +FSTOUTPUT+ passes through like any other key.
-  # {#[]} and {#to_h} reach a key a later libvoikko adds.
+  # {#[]} and {#to_h} reach a key a later libvoikko adds. {#morphemes} decodes +STRUCTURE+.
   #
+  # @!attribute [r] word
+  #   @return [String] the word as passed to {Voikko#analyze}, in its case, frozen UTF-8; what
+  #     {#morphemes} cuts.
   # @!attribute [r] attributes
   #   @return [Hash{String => String}] libvoikko's attributes, keyed by its upper-case names.
-  Analysis = Data.define(:attributes)
+  Analysis = Data.define(:word, :attributes)
+
+  # One morpheme of {Analysis#word}, cut where libvoikko's +STRUCTURE+ starts a new one, from
+  # {Analysis#morphemes}:
+  #
+  #   voikko.analyze('tv-ohjelmassa').first.morphemes
+  #   #=> [#<data Voikko::Morpheme text="tv", standard_case="TV", hyphen_before=false, hyphen_after=true>,
+  #   #    #<data Voikko::Morpheme text="ohjelmassa", standard_case="ohjelmassa", hyphen_before=false, hyphen_after=false>]
+  #
+  # A hyphen belongs to the morpheme it follows, as libvoikko writes it (+-=+), so each character
+  # of the word lands in exactly one morpheme. +hyphen_before+ is therefore true only on the first
+  # morpheme of a word that starts with a hyphen (+-vuotias+). The word is the concatenation of
+  # each morpheme's +text+, a +-+ before it if +hyphen_before+ and after it if +hyphen_after+.
+  # A hyphen inside a morpheme stays in +text+, as does a colon (+YK:n+ is one morpheme).
+  #
+  # @!attribute [r] text
+  #   @return [String] the morpheme as written in the word, without its hyphens; frozen.
+  # @!attribute [r] standard_case
+  #   @return [String] +text+ in the case the reading's dictionary form spells it: +"Helsingissä"+
+  #     for +HELSINGISSÄ+; frozen.
+  # @!attribute [r] hyphen_before
+  #   @return [Boolean] whether a hyphen precedes the morpheme: only at the word's start.
+  # @!attribute [r] hyphen_after
+  #   @return [Boolean] whether a hyphen follows the morpheme.
+  Morpheme = Data.define(:text, :standard_case, :hyphen_before, :hyphen_after) do
+    alias_method :hyphen_before?, :hyphen_before
+    alias_method :hyphen_after?, :hyphen_after
+  end
 
   # Reopened rather than given as a +Data.define+ block: a constant inside that block would
   # land on {Voikko}.
@@ -76,8 +107,56 @@ class Voikko
     def [](key) = attributes[key]
 
     # @return [Hash{String => String}] the attributes themselves, not +Data+'s
-    #   +{attributes: {...}}+.
+    #   +{word: ..., attributes: {...}}+.
     def to_h = attributes
+
+    # The word cut into its morphemes, decoded from +STRUCTURE+:
+    #
+    #   voikko.analyze('linja-autossa').first.morphemes.map(&:text)   #=> ["linja", "autossa"]
+    #   voikko.analyze('Wikipedia').first.morphemes.map(&:text)       #=> ["Wiki", "pedia"]
+    #
+    # Only a cut: no second analysis of each part, no case change. Not every morpheme boundary
+    # is marked: +yrityskirjautumisen+ is +yritys+ and +kirjautumisen+, the derivation
+    # unsplit. Upstream's format is in +R_structure_format+.
+    #
+    # @return [Array<Morpheme>, nil] the morphemes, or +nil+ when the backend gives no
+    #   +STRUCTURE+.
+    # @raise [Error] when +STRUCTURE+, its +=+ marks removed, is not one mark per character of
+    #   {#word}; libvoikko aims at that but only asserts it.
+    def morphemes
+      return unless structure
+      unless structure.delete('=').length == word.length
+        raise Error, "STRUCTURE #{structure.inspect} does not line up with #{word.inspect}"
+      end
+
+      hyphen_before = structure.start_with?('-')
+      offset = hyphen_before ? 1 : 0
+      structure[offset..].split('=').reject(&:empty?).map do |marks|
+        text = word[offset, marks.length]
+        offset += marks.length
+        hyphen_after = marks.end_with?('-')
+        if hyphen_after
+          text = text.chop
+          marks = marks.chop
+        end
+        morpheme = Morpheme.new(text: text.freeze, standard_case: standard_case(text, marks),
+                                hyphen_before:, hyphen_after:)
+        hyphen_before = false
+        morpheme
+      end
+    end
+
+    private
+
+    # +i+/+j+ mark a letter upper case in the dictionary form, +p+/+q+ lower case.
+    CASE_OF_MARK = { 'i' => :upcase, 'j' => :upcase, 'p' => :downcase, 'q' => :downcase }.freeze
+    private_constant :CASE_OF_MARK
+
+    def standard_case(text, marks)
+      text.each_char.zip(marks.each_char).map do |char, mark|
+        (change = CASE_OF_MARK[mark]) ? char.public_send(change) : char
+      end.join.freeze
+    end
   end
 
   # The C functions, bound by the versioned soname: the bare +libvoikko.so+ ships only with
@@ -174,13 +253,13 @@ class Voikko
   #   word at, or cannot be read as UTF-8.
   # @raise [Error] when this handle is closed.
   def analyze(word)
-    word = utf8_word(word)
+    word = utf8_word(word).freeze
     with_handle do |handle|
       analyses = Lib.voikkoAnalyzeWordCstr(handle, word)
       next [] if analyses.null?
 
       begin
-        null_terminated(analyses).map { |analysis| Analysis.new(attributes_of(analysis)) }
+        null_terminated(analyses).map { |analysis| Analysis.new(word, attributes_of(analysis)) }
       ensure
         Lib.voikko_free_mor_analysis(analyses)
       end
