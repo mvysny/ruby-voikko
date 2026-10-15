@@ -43,6 +43,8 @@ end
 `require 'voikko'` does not load libvoikko; the first `Voikko.new` does. So your tests can
 build a `Voikko::Analysis` by hand on a machine without libvoikko.
 
+The full API is documented on [rubydoc.info](https://rubydoc.info/gems/voikko).
+
 ## License
 
 MIT, see [LICENSE](LICENSE). The gem ships no Voikko code or data: libvoikko

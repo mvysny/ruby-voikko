@@ -17,7 +17,7 @@ distro's packages.
 
 | File | Owns | Loaded |
 |---|---|---|
-| `README.md` | the pitch, requirements, install | — |
+| `README.md` | the pitch, requirements, install, a happy-path usage tour | — |
 | `AGENTS.md` (this) | promises, the module map, conventions, commands | every turn |
 | `design/decisions.md` | why this and not that — `D_` entries, FAQ-shaped | lazy |
 | `design/research.md` | what libvoikko and voikko-fi actually do — `R_` entries with provenance | lazy |
