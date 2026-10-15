@@ -15,8 +15,8 @@ require_relative 'voikko/version'
 #
 # A handle holds about 0.5 MB of native memory that Ruby's GC cannot see: prefer {.open}, which
 # closes it after the block, or call {#close} yourself. A forgotten handle is still freed by a
-# finalizer once unreachable. After {#close}, every method but {#close} and {#closed?} raises
-# {Error}.
+# finalizer once unreachable. After {#close}, every method but {#close}, {#closed?} and
+# {#language} raises {Error}.
 #
 # Named +Voikko+, not +Voikko::Analyzer+, because libvoikko also spells, hyphenates and checks
 # grammar; those methods (+#spell+, +#suggest+, +#hyphenate+) would sit here, and are not bound
@@ -235,7 +235,14 @@ class Voikko
     end
     @handle = FFI::AutoPointer.new(handle, Lib.method(:voikkoTerminate))
     @mutex = Mutex.new
+    @language = language.dup.freeze
   end
+
+  # The tag this handle was opened with, as passed: +'fi'+ and +'fi-FI'+ open the same
+  # dictionary but stay distinct here. Readable after {#close}.
+  #
+  # @return [String] frozen, e.g. +"fi"+.
+  attr_reader :language
 
   # Every reading libvoikko finds for +word+, in its order. Case is ignored, and one word often
   # has several readings:

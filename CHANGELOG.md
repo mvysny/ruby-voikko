@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - `Analysis#morphemes` cuts the word into `Voikko::Morpheme`s decoded from `STRUCTURE`, and `Analysis` now holds the analysed `word`, so a hand-built `Analysis.new(attributes)` becomes `Analysis.new(word, attributes)`.
+- `Voikko#language` answers the language tag the handle was opened with.
 
 ## [0.1.0] - 2026-10-14
 

@@ -220,6 +220,14 @@ describe Voikko do
       voikko&.close
     end
 
+    it 'answers the language tag as passed, after close too' do
+      voikko = Voikko.new(language: 'fi-FI')
+      assert_equal 'fi-FI', voikko.language
+      assert voikko.language.frozen?
+      voikko.close
+      assert_equal 'fi-FI', voikko.language
+    end
+
     it 'closes idempotently and raises on later calls' do
       voikko = Voikko.new(language: 'fi')
       voikko.close
