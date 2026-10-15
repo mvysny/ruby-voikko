@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-15
+
 - `Analysis#morphemes` cuts the word into `Voikko::Morpheme`s decoded from `STRUCTURE`, and `Analysis` now holds the analysed `word`, so a hand-built `Analysis.new(attributes)` becomes `Analysis.new(word, attributes)`.
 - `Voikko#language` answers the language tag the handle was opened with.
 - `require 'voikko'` no longer needs libvoikko: the first `Voikko.new` or `Voikko.library_version` binds it, so a caller rescuing a missing library moves its `rescue LoadError` from the `require` to that call.
