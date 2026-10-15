@@ -32,10 +32,16 @@ Voikko.open(language: 'fi') do |voikko|
   kadulla.sijamuoto                 #=> "ulkoolento"
   voikko.base_forms('voi')          #=> ["voida", "voi"]
   voikko.base_forms('HELSINGISSÄ')  #=> ["Helsinki"]
+
+  # A compound, cut into its parts as written:
+  voikko.analyze('tietokoneella').first.morphemes.map(&:text)  #=> ["tieto", "koneella"]
 end
 ```
 
 `Voikko.open` closes the handle after the block; `Voikko.new` leaves that to `#close`.
+
+`require 'voikko'` does not load libvoikko; the first `Voikko.new` does. So your tests can
+build a `Voikko::Analysis` by hand on a machine without libvoikko.
 
 ## License
 
