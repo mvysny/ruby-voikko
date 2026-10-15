@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'open3'
+
 describe Voikko do
   around do |example|
     Voikko.open(language: 'fi') do |voikko|
@@ -226,6 +228,26 @@ describe Voikko do
       assert voikko.language.frozen?
       voikko.close
       assert_equal 'fi-FI', voikko.language
+    end
+
+    # In a child process, with ffi_lib failing as on a host without libvoikko1.
+    it 'loads libvoikko at the first Voikko.new, not at require, and retries a failed load' do
+      script = <<~RUBY
+        require 'ffi'
+        FFI::Library.define_method(:ffi_lib) { |*| raise LoadError, 'libvoikko.so.1: not found' }
+        require 'voikko'
+        p Voikko::Analysis.new('tietokoneella', { 'STRUCTURE' => '=ppppp=pppppppp' }).morphemes.map(&:text)
+        2.times do
+          Voikko.new(language: 'fi')
+        rescue LoadError => e
+          p e.message
+        end
+      RUBY
+      output, status = Open3.capture2e(RbConfig.ruby, '-I', File.expand_path('../lib', __dir__),
+                                       '-e', script)
+      assert status.success?, output
+      hint = "libvoikko.so.1: not found\nlibvoikko is not installed: apt install libvoikko1 voikko-fi"
+      assert_equal [%w[tieto koneella].inspect, hint.inspect, hint.inspect].join("\n") + "\n", output
     end
 
     it 'closes idempotently and raises on later calls' do

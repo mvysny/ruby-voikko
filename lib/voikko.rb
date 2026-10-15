@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'ffi'
 require_relative 'voikko/version'
 
 # A handle on libvoikko, the Finnish morphological analyser, bound through FFI to the system's
@@ -17,6 +16,15 @@ require_relative 'voikko/version'
 # closes it after the block, or call {#close} yourself. A forgotten handle is still freed by a
 # finalizer once unreachable. After {#close}, every method but {#close}, {#closed?} and
 # {#language} raises {Error}.
+#
+# +require 'voikko'+ loads no native code; the first {.new} binds libvoikko. So {Analysis} and
+# {Morpheme} are plain Ruby wherever the gem is installed, and a caller's tests can build one
+# without libvoikko:
+#
+#   analysis = Voikko::Analysis.new('tietokoneella', { 'STRUCTURE' => '=ppppp=pppppppp' })
+#   analysis.morphemes.map(&:text)   #=> ["tieto", "koneella"]
+#
+# The braces are needed: bare, Ruby passes the +'STRUCTURE' =>+ hash as keywords.
 #
 # Named +Voikko+, not +Voikko::Analyzer+, because libvoikko also spells, hyphenates and checks
 # grammar; those methods (+#spell+, +#suggest+, +#hyphenate+) would sit here, and are not bound
@@ -159,31 +167,12 @@ class Voikko
     end
   end
 
-  # The C functions, bound by the versioned soname: the bare +libvoikko.so+ ships only with
-  # +libvoikko-dev+. A missing library re-raises +LoadError+, so a caller that makes the gem
-  # optional still rescues it, with the packages to install appended.
-  module Lib
-    extend FFI::Library
-
-    begin
-      ffi_lib 'libvoikko.so.1'
-    rescue LoadError => e
-      raise LoadError, "#{e.message}\nlibvoikko is not installed: apt install libvoikko1 voikko-fi"
-    end
-
-    attach_function :voikkoGetVersion, [], :string
-    attach_function :voikkoInit, %i[pointer string string], :pointer
-    attach_function :voikkoTerminate, [:pointer], :void
-    attach_function :voikkoAnalyzeWordCstr, %i[pointer string], :pointer
-    attach_function :voikko_free_mor_analysis, [:pointer], :void
-    attach_function :voikko_mor_analysis_keys, [:pointer], :pointer
-    attach_function :voikko_mor_analysis_value_cstr, %i[pointer pointer], :pointer
-    attach_function :voikko_free_mor_analysis_value_cstr, [:pointer], :void
-  end
-  private_constant :Lib
-
   # @return [String] the system libvoikko's version: +"4.3.3"+.
-  def self.library_version = Lib.voikkoGetVersion
+  # @raise [LoadError] when libvoikko is not installed; the message names the packages.
+  def self.library_version
+    require_relative 'voikko/lib'
+    Lib.voikkoGetVersion
+  end
 
   # Opens a handle, yields it and closes it after the block, the way +File.open+ sits beside
   # +File.new+: the block form is where {#close} runs without the caller remembering it.
@@ -196,6 +185,7 @@ class Voikko
   # @yieldparam voikko [Voikko] the open handle.
   # @return [Object, Voikko] the block's value, or the open handle when no block is given.
   # @raise [TypeError] (see #initialize)
+  # @raise [LoadError] (see #initialize)
   # @raise [Error] (see #initialize)
   def self.open(language:, path: nil)
     voikko = new(language:, path:)
@@ -216,6 +206,7 @@ class Voikko
   #   ones; a directory that does not exist is ignored.
   # @raise [TypeError] when +language+ is not a String (+:fi+ is not), or +path+ neither a String
   #   nor +nil+.
+  # @raise [LoadError] when libvoikko is not installed; the message names the packages.
   # @raise [Error] when no installed dictionary serves +language+; the message names +voikko-fi+.
   def initialize(language:, path: nil)
     unless language.is_a?(String)
@@ -225,6 +216,7 @@ class Voikko
       raise TypeError, "path must be a String or nil, got #{path.inspect}"
     end
 
+    require_relative 'voikko/lib'
     error = FFI::MemoryPointer.new(:pointer)
     handle = Lib.voikkoInit(error, language, path)
     if handle.null?

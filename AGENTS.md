@@ -30,7 +30,8 @@ Every fact lives in exactly one of these; the others link to it.
 
 ## Module map
 
-- `lib/voikko.rb` — the `Voikko` handle class, its `Analysis` value and the private FFI binding `Voikko::Lib`.
+- `lib/voikko.rb` — the `Voikko` handle class and its `Analysis` / `Morpheme` values, plain Ruby.
+- `lib/voikko/lib.rb` — the private FFI binding `Voikko::Lib`, loaded by the first `Voikko.new`, never by `require 'voikko'`. See `D_ffi_distro_lib`.
 
 ## Conventions
 
@@ -40,7 +41,7 @@ Every fact lives in exactly one of these; the others link to it.
 - **YARD on every public module/class/method**: concrete `@param` / `@return` types, `@raise` for expected exceptions, the local *why*.
 - **Tests: rspec-core with minitest-style asserts.** `describe` / `it` but `assert_equal` / `assert` / `refute`; no RSpec matchers, no rspec-mocks.
 - **Tests run against the real libvoikko**, never a stub of it; CI installs `libvoikko1` + `voikko-fi`.
-- **Errors are loud.** A missing library or dictionary raises at load with the packages to install; a libvoikko error raises with its message.
+- **Errors are loud.** A missing library or dictionary raises at the first `Voikko.new` with the packages to install; a libvoikko error raises with its message.
 - **Pre-1.0: break APIs freely**, with a CHANGELOG line carrying the migration.
 - **A CHANGELOG entry is one sentence**, new work under `[Unreleased]`.
 

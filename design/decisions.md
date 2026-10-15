@@ -16,7 +16,7 @@ above, open the doc comments it touches and cut what they already say, then cut 
 ## D_ffi_distro_lib — Why FFI to the distro's libvoikko rather than a C extension or bundled sources?
 
 The gem ships Ruby only. It binds `libvoikko.so.1` (Debian/Ubuntu `libvoikko1`) through the
-`ffi` gem at load time, by that versioned name, since the bare `libvoikko.so` comes only with
+`ffi` gem on the first `Voikko.new`, by that versioned name, since the bare `libvoikko.so` comes only with
 `libvoikko-dev` (`R_library_files`); libvoikko finds the dictionary on its own (`voikko-fi`, under
 `/usr/lib/voikko/`). The binding needs only a handful of calls: init and terminate a handle,
 analyse a word, read one attribute of an analysis, free the result. Why not a C extension: it
@@ -26,7 +26,10 @@ directly. Why not bundle libvoikko's sources, the way `ruby-stemmer` bundles lib
 gem would then own libvoikko's security fixes and would have to match the dictionary format
 version (the `5` in that path) that the distro already keeps in step with its library. Shipping
 no Voikko code also keeps the gem MIT. The cost: macOS needs libvoikko from elsewhere, and a
-missing library shows up at `require`, not at install, so the load error names the packages.
+missing library shows up at the first `Voikko.new`, not at install, so the load error names the
+packages. Why not bind at `require`, which would fail earlier: `Analysis` and `Morpheme` are
+plain Ruby, and binding late lets a caller's own tests build them on a machine without
+libvoikko, such as a CI that never opens a handle.
 
 ## D_handle_mutex — Why does each handle lock itself rather than leave threads to the caller?
 
